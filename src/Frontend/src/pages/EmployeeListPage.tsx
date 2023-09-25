@@ -1,38 +1,21 @@
-import {
-  Button,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-  styled,
-  tableCellClasses,
-} from "@mui/material";
+import { Button, TextField, Typography } from "@mui/material";
+
+import TableEmployee from "../components/TableEmployee";
 
 import axios from "axios";
 
 import { ChangeEvent, useEffect, useState } from "react";
 
-const url = "/api/employees/list";
+import { EmployeeListQuery } from "../interface";
+import LoadingElement from "../components/LoadingElement";
 
-interface EmployeeListQuery {
-  id: number;
-  code: string;
-  firstName: string;
-  lastName: string;
-  address: string;
-  email: string;
-  phone: string;
-}
+const url = "/api/employees/list";
 
 export default function EmployeeListPage() {
   const [list, setList] = useState<EmployeeListQuery[]>([]);
   const [firstName, setFirstName] = useState<string>("");
   const [lastName, setLastName] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
 
   const handleChangeFirstName = (e: ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
@@ -43,8 +26,6 @@ export default function EmployeeListPage() {
     e.preventDefault();
     setLastName(e.target.value);
   };
-
-  //const filterData = filterTable();
 
   const getData = async (firstName?: string, lastName?: string) => {
     const params: { firstName?: string; lastName?: string } = {};
@@ -58,6 +39,7 @@ export default function EmployeeListPage() {
 
     const response = await axios.get(url, { params: params });
     setList(response.data as EmployeeListQuery[]);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -82,8 +64,10 @@ export default function EmployeeListPage() {
         Employees
       </Typography>
 
-      {list.length > 0 ? (
-        <TableContainer component={Paper}>
+      {loading ? (
+        <LoadingElement />
+      ) : (
+        <div>
           <Button variant="contained" onClick={downloadXMLFile}>
             Export XML
           </Button>
@@ -101,51 +85,13 @@ export default function EmployeeListPage() {
             placeholder="Search by lastname..."
             fullWidth
           />
-          <Table sx={{ minWidth: 650 }} aria-label="simple table">
-            <TableHead>
-              <TableRow>
-                <StyledTableHeadCell>Code</StyledTableHeadCell>
-                <StyledTableHeadCell>Firstname</StyledTableHeadCell>
-                <StyledTableHeadCell>Lastname</StyledTableHeadCell>
-                <StyledTableHeadCell>Email</StyledTableHeadCell>
-                <StyledTableHeadCell>Phone</StyledTableHeadCell>
-                <StyledTableHeadCell>Address</StyledTableHeadCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {list.map((row) => (
-                <TableRow
-                  key={row.id}
-                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                >
-                  <TableCell>{row.code}</TableCell>
-                  <TableCell>{row.firstName}</TableCell>
-                  <TableCell>{row.lastName}</TableCell>
-                  <TableCell>{row.email}</TableCell>
-                  <TableCell>{row.phone}</TableCell>
-                  <TableCell>{row.address}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      ) : (
-        loadingElement()
+
+          <TableEmployee data={list} />
+        </div>
       )}
     </>
   );
 }
-
-const StyledTableHeadCell = styled(TableCell)(({ theme }) => ({
-  [`&.${tableCellClasses.head}`]: {
-    backgroundColor: theme.palette.primary.light,
-    color: theme.palette.common.white,
-  },
-}));
-
-const loadingElement = () => {
-  return <h1>Loading Table...</h1>;
-};
 
 const toXml = (data: EmployeeListQuery[]) => {
   const header = "<?xml version='1.0' encoding='utf-8'?>";
